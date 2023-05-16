@@ -1,13 +1,12 @@
 package controller
 
 import (
-	"fmt"
 	"log"
 	"net/http"
 	"strconv"
+	"time"
 
 	"github.com/Alfeenn/todo-list/helper"
-	"github.com/Alfeenn/todo-list/middleware"
 	"github.com/Alfeenn/todo-list/model"
 	"github.com/Alfeenn/todo-list/model/web"
 	"github.com/Alfeenn/todo-list/service"
@@ -69,10 +68,16 @@ func (c *ControllerImpl) Delete(g *gin.Context) {
 	g.JSON(http.StatusOK, gin.H{"code": http.StatusOK, "msg": "Successfully delete data"})
 }
 
-func (c *ControllerImpl) DeleteUser(g *gin.Context) {
-	id := g.Param("id")
-	c.ServiceModel.DeleteUser(g.Request.Context(), id)
-	g.JSON(http.StatusOK, gin.H{"code": http.StatusOK, "msg": "Successfully delete data"})
+func (c *ControllerImpl) DeleteActivity(g *gin.Context) {
+	stringId := g.Params.ByName("id")
+	id, err := strconv.Atoi(stringId)
+	helper.PanicIfErr(err)
+	c.ServiceModel.DeleteActivity(g.Request.Context(), id)
+	response := web.WebResponse{
+		Code:   http.StatusOK,
+		Status: "OK",
+	}
+	g.JSON(http.StatusOK, response)
 }
 
 func (c *ControllerImpl) FindCourseById(g *gin.Context) {
@@ -104,11 +109,11 @@ func (c *ControllerImpl) FindCourseByCategory(g *gin.Context) {
 				"msg":  "category not found"})
 	} else {
 
-		result := c.ServiceModel.FindCourseByCategory(g.Request.Context(), id)
+		// result := c.ServiceModel.FindActivityById(g.Request.Context(), id)
 		response := web.WebResponse{
 			Code:   http.StatusOK,
 			Status: "OK",
-			Data:   result,
+			// Data:   result,
 		}
 		g.JSON(http.StatusOK, response)
 
@@ -128,81 +133,20 @@ func (c *ControllerImpl) FindAll(g *gin.Context) {
 
 }
 
-func (c *ControllerImpl) UserSignIn(g *gin.Context) {
-	key := strconv.AppendBool([]byte(model.Key), true)
-	requestservice := web.RequestLogin{
-		Username: g.Request.FormValue("username"),
-		Password: g.Request.FormValue("password"),
-	}
-	//check form input
-	err := g.ShouldBind(&requestservice)
+func (c *ControllerImpl) CreateActivity(g *gin.Context) {
+	request := model.Activity{}
+	request.CreatedAt = time.Now()
+	err := g.ShouldBindJSON(&request)
 	if err != nil {
+
 		g.AbortWithStatusJSON(http.StatusBadRequest,
-			gin.H{
-				"code": http.StatusBadRequest,
-				"msg":  err.Error(),
-			})
-	} else {
-		//proceed to login
-		user := c.ServiceModel.Login(g.Request.Context(), requestservice)
-		match := helper.CheckHashPassword(user.Password, requestservice.Password)
-		var data map[string]interface{}
-		//check if password match
-		if !match {
-			g.AbortWithStatusJSON(http.StatusInternalServerError,
-				gin.H{
-					"code": http.StatusInternalServerError,
-					"msg":  "Password not match"})
-		} else {
-			//set token
-			tokenstring := helper.GenerateToken(g, key, user)
-			data = map[string]interface{}{
-				"Authorization": tokenstring,
-			}
-			g.JSON(http.StatusOK, web.WebResponse{
-				Code:   200,
-				Status: "OK",
-				Data:   data,
-			})
-		}
-	}
-}
-
-func (c *ControllerImpl) GetAccessList(g *gin.Context) {
-	enforcer := middleware.UserPolicy()
-
-	adapter := enforcer.GetAllObjects()
-
-	response := web.WebResponse{
-		Code:   http.StatusOK,
-		Status: "OK",
-		Data:   adapter,
-	}
-	g.JSON(http.StatusOK, response)
-
-}
-
-func (c *ControllerImpl) Register(g *gin.Context) {
-	enforcer := middleware.UserPolicy()
-	req := web.CategoryRequest{}
-	age, _ := strconv.Atoi(g.Request.FormValue("age"))
-	req.Age = int64(age)
-	phone, _ := strconv.Atoi(g.Request.FormValue("phone"))
-	req.Phone = int64(phone)
-
-	err := g.ShouldBind(&req)
-	log.Print(req)
-	if err != nil {
-		g.AbortWithStatusJSON(http.StatusBadRequest,
-			gin.H{
-				"code": http.StatusBadRequest,
-				"msg":  err.Error(),
+			web.WebResponse{
+				Status:  "Bad request",
+				Message: "title cannot be null",
 			})
 	} else {
 
-		req.Password, _ = helper.HashPassword(req.Password)
-		resp := c.ServiceModel.Register(g.Request.Context(), req)
-		enforcer.AddGroupingPolicy(fmt.Sprint(resp.Username), resp.Role)
+		resp := c.ServiceModel.CreateActivity(g.Request.Context(), request)
 		response := web.WebResponse{
 			Code:   http.StatusCreated,
 			Status: "CREATED",
@@ -210,26 +154,55 @@ func (c *ControllerImpl) Register(g *gin.Context) {
 		}
 		g.JSON(http.StatusOK, response)
 	}
+}
+
+func (c *ControllerImpl) FindAllActivity(g *gin.Context) {
+
+	result := c.ServiceModel.FindAllActivity(g.Request.Context())
+	response := web.WebResponse{
+		Status:  "Success",
+		Message: "Success",
+		Data:    result,
+	}
+	g.JSON(http.StatusOK, response)
 
 }
 
-func (c *ControllerImpl) GetCourse(g *gin.Context) {
-	id := g.Params.ByName("idcourse")
-	req := model.Class{}
-	sub, existed := g.Get("id")
-	if !existed {
-		g.AbortWithStatusJSON(401, gin.H{"code": 401, "msg": "User hasn't logged in yet"})
-		return
+func (c *ControllerImpl) UpdateActivity(g *gin.Context) {
+	request := model.Activity{}
+	err := g.ShouldBindJSON(&request)
+
+	//check if bind json error
+	if err != nil {
+
+		g.AbortWithStatusJSON(http.StatusInternalServerError,
+			gin.H{
+				"code": http.StatusInternalServerError,
+				"msg":  err.Error(),
+			})
+	} else {
+		stringId := g.Param("idactivity")
+		id, err := strconv.Atoi(stringId)
+		helper.PanicIfErr(err)
+		request.Id = id
+		log.Print(request)
+		result := c.ServiceModel.UpdateActivity(g.Request.Context(), request)
+		g.JSON(http.StatusOK, result)
 	}
-	req.UserId = fmt.Sprint(sub)
-	log.Print(req.UserId)
-	if id == "" {
+
+}
+
+func (c *ControllerImpl) FindActivityById(g *gin.Context) {
+	stringId := g.Params.ByName("id")
+	id, err := strconv.Atoi(stringId)
+	helper.PanicIfErr(err)
+	if id == 0 {
 		g.AbortWithStatusJSON(http.StatusNotFound,
 			gin.H{
 				"code": http.StatusNotFound,
 				"msg":  "Id not found"})
 	} else {
-		result := c.ServiceModel.GetCourse(g.Request.Context(), req, id)
+		result := c.ServiceModel.FindActivityById(g.Request.Context(), id)
 		response := web.WebResponse{
 			Code:   http.StatusOK,
 			Status: "OK",

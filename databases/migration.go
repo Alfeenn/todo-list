@@ -3,9 +3,9 @@ package databases
 import (
 	"fmt"
 
-	"github.com/Alfeenn/online-learning/app"
-	"github.com/Alfeenn/online-learning/databases/migrate"
-	"github.com/Alfeenn/online-learning/helper"
+	"github.com/Alfeenn/todo-list/app"
+	"github.com/Alfeenn/todo-list/databases/migrate"
+	"github.com/Alfeenn/todo-list/helper"
 	"github.com/joho/godotenv"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
@@ -13,9 +13,7 @@ import (
 
 func Tables() []interface{} {
 	return []interface{}{
-		&migrate.UserTable{},
-		&migrate.CourseTable{},
-		&migrate.ClassTable{},
+		&migrate.ActivityTable{},
 	}
 }
 

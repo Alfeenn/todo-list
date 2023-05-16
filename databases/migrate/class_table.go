@@ -3,7 +3,7 @@ package migrate
 import (
 	"os"
 
-	"github.com/Alfeenn/online-learning/model"
+	"github.com/Alfeenn/todo-list/model"
 )
 
 type ClassTable struct {

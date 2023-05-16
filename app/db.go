@@ -6,7 +6,7 @@ import (
 	"log"
 	"os"
 
-	"github.com/Alfeenn/online-learning/helper"
+	"github.com/Alfeenn/todo-list/helper"
 	_ "github.com/go-sql-driver/mysql"
 )
 
@@ -23,7 +23,7 @@ func NewDB() *sql.DB {
 
 func CreateDB() {
 	initDB := helper.NewDB()
-	dbName := os.Getenv("DBNAME")
+	dbName := os.Getenv("MYSQL_DBNAME")
 	db, err := sql.Open("mysql", initDB)
 	if err != nil {
 		log.Fatal("connection error")

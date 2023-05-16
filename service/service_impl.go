@@ -7,7 +7,6 @@ import (
 
 	"github.com/Alfeenn/todo-list/helper"
 	"github.com/Alfeenn/todo-list/model"
-	"github.com/Alfeenn/todo-list/model/web"
 	"github.com/Alfeenn/todo-list/repository"
 )
 
@@ -53,19 +52,12 @@ func (s *ServiceImpl) UpdateToDo(ctx context.Context, req model.Course) model.Co
 	return updateCourse
 }
 
-func (s *ServiceImpl) DeleteUser(ctx context.Context, id string) {
-	tx, err := s.DB.Begin()
-	helper.PanicIfErr(err)
-	defer helper.CommitorRollback(tx)
-	s.Rep.DeleteToDo(ctx, tx, id)
-}
-
 func (s *ServiceImpl) DeleteToDo(ctx context.Context, id string) {
 	tx, err := s.DB.Begin()
 	helper.PanicIfErr(err)
 	defer helper.CommitorRollback(tx)
 	req, err := s.Rep.FindTodo(ctx, tx, id)
-	s.Rep.DeleteCourse(ctx, tx, req.Id)
+	s.Rep.FindTodo(ctx, tx, req.Id)
 	helper.PanicIfErr(err)
 	s.Rep.DeleteToDo(ctx, tx, req.Id)
 
@@ -76,18 +68,6 @@ func (s *ServiceImpl) FindTodo(ctx context.Context, id string) model.Course {
 	helper.PanicIfErr(err)
 	defer helper.CommitorRollback(tx)
 	model, err := s.Rep.FindTodo(ctx, tx, id)
-	if err != nil {
-		panic(err)
-	}
-	return model
-
-}
-
-func (s *ServiceImpl) FindCourseByCategory(ctx context.Context, id string) model.Course {
-	tx, err := s.DB.Begin()
-	helper.PanicIfErr(err)
-	defer helper.CommitorRollback(tx)
-	model, err := s.Rep.FindCourseByCategory(ctx, tx, id)
 	if err != nil {
 		panic(err)
 	}
@@ -110,54 +90,69 @@ func (s *ServiceImpl) FindAllToDo(ctx context.Context) []model.Course {
 	return sliceCourse
 }
 
-func (s *ServiceImpl) Login(ctx context.Context, request web.RequestLogin) web.CatResp {
+func (s *ServiceImpl) CreateActivity(ctx context.Context, request model.Activity) model.Activity {
 	tx, err := s.DB.Begin()
 	if err != nil {
 		panic(err)
 	}
 	defer helper.CommitorRollback(tx)
-	category := model.User{
-		Username: request.Username,
-		Password: request.Password,
+	category := model.Activity{
+		Title: request.Title,
+		Email: request.Email, CreatedAt: request.CreatedAt,
 	}
-	category, err = s.Rep.Login(ctx, tx, category)
+	category = s.Rep.CreateActivity(ctx, tx, category)
 	if err != nil {
 
 		panic(err.Error())
 	}
 
-	return helper.ConvertModel(category)
+	return category
 
 }
 
-func (s *ServiceImpl) Register(ctx context.Context, request web.CategoryRequest) web.CatResp {
+func (s *ServiceImpl) UpdateActivity(ctx context.Context, request model.Activity) model.Activity {
 	tx, err := s.DB.Begin()
 	if err != nil {
 		log.Fatal(err)
 	}
 	defer helper.CommitorRollback(tx)
-	category := model.User{
-		Id:       request.Id,
-		Username: request.Username,
-		Password: request.Password,
-		Name:     request.Name,
-		Age:      request.Age,
-		Phone:    request.Phone,
-		Role:     request.Role,
+
+	category, err := s.Rep.FindActivityById(ctx, tx, request.Id)
+	if err != nil {
+		panic(err.Error())
 	}
-	if category.Role == "" {
-		category.Role = "user"
-	}
-	category = s.Rep.Register(ctx, tx, category)
-	return helper.ConvertModel(category)
+	category.Title = request.Title
+	category = s.Rep.UpdateActivity(ctx, tx, category)
+	return category
 }
 
-func (s *ServiceImpl) GetCourse(ctx context.Context, req model.Class, id string) model.Class {
+func (s *ServiceImpl) DeleteActivity(ctx context.Context, id int) {
 	tx, err := s.DB.Begin()
 	helper.PanicIfErr(err)
 	defer helper.CommitorRollback(tx)
-	Class := s.Rep.GetCourse(ctx, tx, req, id)
-	Class.CourseId = id
-	return Class
+	req, err := s.Rep.FindActivityById(ctx, tx, id)
+	helper.PanicIfErr(err)
+	s.Rep.DeleteActivity(ctx, tx, req.Id)
 
+}
+
+func (s *ServiceImpl) FindAllActivity(ctx context.Context) []model.Activity {
+	tx, err := s.DB.Begin()
+	helper.PanicIfErr(err)
+	defer helper.CommitorRollback(tx)
+
+	activities := s.Rep.FindAllActivity(ctx, tx)
+
+	return activities
+}
+
+func (s *ServiceImpl) FindActivityById(ctx context.Context, id int) model.Activity {
+	tx, err := s.DB.Begin()
+	helper.PanicIfErr(err)
+	defer helper.CommitorRollback(tx)
+	model, err := s.Rep.FindActivityById(ctx, tx, id)
+	if err != nil {
+		log.Print(err.Error())
+	}
+	return model
 }

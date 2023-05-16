@@ -1,5 +1,9 @@
 package model
 
+import (
+	"time"
+)
+
 type User struct {
 	Id       string `gorm:"primary_key; column:id"`
 	Username string `gorm:"not null; unique; size:32"`
@@ -11,16 +15,16 @@ type User struct {
 }
 
 type Todo struct {
-	Id        int    `json:"id"`
-	Title     string `json:"title"`
-	Priority  string `json:"priority"`
-	Isactive  bool   `json:"is_active"`
-	CreatedAt string `json:"created_at"`
+	Id        int       `json:"id"`
+	Title     string    `json:"title"`
+	Priority  string    `json:"priority"`
+	Isactive  bool      `json:"is_active"`
+	CreatedAt time.Time `json:"created_at"`
 }
 
 type Activity struct {
-	Id        int    `json:"id"`
-	Title     string `json:"title"`
-	Email     string `json:"email"`
-	CreatedAt string `json:"created_at"`
+	Id        int       `gorm:"primary_key; column:id" json:"id"`
+	Title     string    `gorm:"not null; size:30" json:"title" binding:"required"`
+	Email     string    `gorm:"not null; size:30" json:"email"`
+	CreatedAt time.Time `json:"created_at"`
 }

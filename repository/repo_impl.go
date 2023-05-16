@@ -4,6 +4,9 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"fmt"
+	"log"
+	"time"
 
 	"github.com/Alfeenn/todo-list/helper"
 	"github.com/Alfeenn/todo-list/model"
@@ -38,12 +41,6 @@ func (r *RepoImpl) UpdateToDo(ctx context.Context, tx *sql.Tx, category model.Co
 
 func (r *RepoImpl) DeleteToDo(ctx context.Context, tx *sql.Tx, id string) {
 	SQL := "DELETE FROM user WHERE id=?"
-	_, err := tx.ExecContext(ctx, SQL, id)
-	helper.PanicIfErr(err)
-}
-
-func (r *RepoImpl) DeleteCourse(ctx context.Context, tx *sql.Tx, id string) {
-	SQL := "DELETE FROM course WHERE id=?"
 	_, err := tx.ExecContext(ctx, SQL, id)
 	helper.PanicIfErr(err)
 }
@@ -84,56 +81,69 @@ func (r *RepoImpl) FindTodo(ctx context.Context, tx *sql.Tx, id string) (model.C
 
 }
 
-func (r *RepoImpl) FindCourseByCategory(ctx context.Context, tx *sql.Tx, category string) (model.Course, error) {
-	SQL := "SELECT *FROM courses WHERE category =?"
+func (m *RepoImpl) CreateActivity(ctx context.Context, tx *sql.Tx, category model.Activity) model.Activity {
+	SQL := `INSERT INTO activity(title,email,created_at) VALUES(?,?,?)`
 
-	rows, err := tx.QueryContext(ctx, SQL, category)
+	rows, err := tx.ExecContext(ctx, SQL, category.Title, category.Email, category.CreatedAt)
+	helper.PanicIfErr(err)
+	id, err := rows.LastInsertId()
+	if err != nil {
+		log.Fatal(err)
+
+	}
+	category.Id = int(id)
+	return category
+}
+
+func (r *RepoImpl) UpdateActivity(ctx context.Context, tx *sql.Tx, category model.Activity) model.Activity {
+	SQL := `UPDATE activity set title=? WHERE id=?`
+	_, err := tx.ExecContext(ctx, SQL, category.Title, category.Id)
+	helper.PanicIfErr(err)
+	return category
+}
+
+func (r *RepoImpl) DeleteActivity(ctx context.Context, tx *sql.Tx, id int) {
+	SQL := `DELETE FROM activity WHERE id=?`
+	_, err := tx.ExecContext(ctx, SQL, id)
+	helper.PanicIfErr(err)
+}
+
+func (r *RepoImpl) FindAllActivity(ctx context.Context, tx *sql.Tx) []model.Activity {
+	SQL := "SELECT *FROM activity"
+	rows, err := tx.QueryContext(ctx, SQL)
 	helper.PanicIfErr(err)
 	defer rows.Close()
-	model := model.Course{}
+	var activities []model.Activity
+	for rows.Next() {
+		activity := model.Activity{}
+		current := fmt.Sprint(activity.CreatedAt)
+		err := rows.Scan(&activity.Id, &activity.Title, &activity.Email, &current)
+		log.Printf("current :%v", current)
+		activity.CreatedAt, _ = time.Parse("2006-01-02 15:04:05", current)
+		log.Printf("created :%v", activity.CreatedAt)
+		if err != nil {
+			log.Print(err)
+		}
+		activities = append(activities, activity)
+	}
+
+	return activities
+}
+
+func (r *RepoImpl) FindActivityById(ctx context.Context, tx *sql.Tx, id int) (model.Activity, error) {
+	SQL := "SELECT *FROM activity WHERE id =?"
+
+	rows, err := tx.QueryContext(ctx, SQL, id)
+	helper.PanicIfErr(err)
+	defer rows.Close()
+	model := model.Activity{}
 	if rows.Next() {
-		rows.Scan(&model.Id, &model.Name,
-			&model.Price, &model.Category, &model.Thumbnail)
+		rows.Scan(&model.Id, &model.Title,
+			&model.Email, &model.CreatedAt)
 
 		return model, nil
 	} else {
 		return model, errors.New("no data")
 	}
 
-}
-
-func (m *RepoImpl) Login(ctx context.Context, tx *sql.Tx, category model.User) (model.User, error) {
-	SQL := `SELECT id,username,password FROM users WHERE username=?`
-	rows, err := tx.QueryContext(ctx, SQL, category.Username)
-	helper.PanicIfErr(err)
-	defer rows.Close()
-	user := model.User{}
-	if rows.Next() {
-		err := rows.Scan(&user.Id, &user.Username, &user.Password)
-		if err != nil {
-			panic(err)
-		}
-		return user, nil
-	} else {
-
-		return user, errors.New("no data")
-	}
-}
-
-func (r *RepoImpl) Register(ctx context.Context, tx *sql.Tx, category model.User) model.User {
-	SQL := "INSERT INTO users(id,username,password,name,age,phone,role) VALUES(?,?,?,?,?,?,?)"
-	category.Id = uuid.NewString()
-	_, err := tx.ExecContext(ctx, SQL,
-		category.Id, category.Username, category.Password,
-		category.Name, category.Age, category.Phone, category.Role)
-	helper.PanicIfErr(err)
-	return category
-}
-
-func (r *RepoImpl) GetCourse(ctx context.Context, tx *sql.Tx, category model.Class, id string) model.Class {
-	SQL := "INSERT INTO class (user_id,course_id) VALUES(?,?)"
-	_, err := tx.ExecContext(ctx, SQL,
-		category.UserId, id)
-	helper.PanicIfErr(err)
-	return category
 }

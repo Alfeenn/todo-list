@@ -2,11 +2,9 @@ package cmd
 
 import (
 	"flag"
-	"log"
 
-	"github.com/Alfeenn/online-learning/databases"
-	"github.com/Alfeenn/online-learning/middleware"
-	"github.com/casbin/casbin/v2"
+	"github.com/Alfeenn/todo-list/databases"
+	"github.com/Alfeenn/todo-list/middleware"
 	"gorm.io/gorm"
 )
 
@@ -27,7 +25,7 @@ func Command(tables []interface{}) (bool, error) {
 	return false, nil
 }
 
-func MigrateCmd() (bool, *casbin.Enforcer) {
+func MigrateCmd() bool {
 	// Schema table
 	tables := databases.Tables()
 	check, err := Command(tables)
@@ -36,11 +34,8 @@ func MigrateCmd() (bool, *casbin.Enforcer) {
 	if err != nil {
 		panic(err)
 	}
-	if err = enforcer.LoadPolicy(); err != nil {
-		log.Fatal("Failed to load policy")
-	}
 
-	return check, enforcer
+	return check
 }
 
 // Up migrates the schema

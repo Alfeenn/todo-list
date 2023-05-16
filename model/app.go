@@ -1,9 +1,9 @@
 package model
 
 type DBConfig struct {
-	Name     string `env:"DBNAME"`
-	Host     string `env:"HOST"`
-	Port     string `env:"PORT"`
-	Username string `env:"USER"`
-	Password string `env:"PASSWORD"`
+	Name     string `env:"MYSQL_DBNAME"`
+	Host     string `env:"MYSQL_HOST"`
+	Port     string `env:"MYSQL_PORT"`
+	Username string `env:"MYSQL_USER"`
+	Password string `env:"MYSQL_PASSWORD"`
 }
