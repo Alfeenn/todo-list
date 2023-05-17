@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/Alfeenn/todo-list/helper"
+	"github.com/Alfeenn/todo-list/middleware"
 	"github.com/Alfeenn/todo-list/model"
 	"github.com/Alfeenn/todo-list/model/web"
 	"github.com/Alfeenn/todo-list/service"
@@ -24,18 +25,18 @@ func NewController(c service.Service) Controller {
 }
 
 func (c *ControllerImpl) Create(g *gin.Context) {
-	req, err := helper.UploadFile(g)
-
+	request := model.Todo{}
+	request.CreatedAt = time.Now()
+	err := g.ShouldBindJSON(&request)
 	if err != nil {
-
 		g.AbortWithStatusJSON(http.StatusBadRequest,
-			gin.H{
-				"code": http.StatusBadRequest,
-				"msg":  err.Error(),
+			web.WebResponse{
+				Status:  "Bad request",
+				Message: "title cannot be null",
 			})
 	} else {
 
-		resp := c.ServiceModel.CreateToDo(g.Request.Context(), req)
+		resp := c.ServiceModel.CreateToDo(g.Request.Context(), request)
 		response := web.WebResponse{
 			Code:   http.StatusCreated,
 			Status: "CREATED",
@@ -46,43 +47,53 @@ func (c *ControllerImpl) Create(g *gin.Context) {
 }
 
 func (c *ControllerImpl) Update(g *gin.Context) {
-	req, err := helper.UploadFile(g)
+	request := model.Todo{}
+	err := g.ShouldBindJSON(&request)
 	//check if bind json error
 	if err != nil {
-
-		g.AbortWithStatusJSON(http.StatusInternalServerError,
-			gin.H{
-				"code": http.StatusInternalServerError,
-				"msg":  err.Error(),
-			})
+		middleware.BadRequest(g, err)
 	} else {
-		result := c.ServiceModel.UpdateToDo(g.Request.Context(), req)
-		g.JSON(http.StatusOK, result)
+		stringId := g.Param("idactivity")
+		id, err := strconv.Atoi(stringId)
+		helper.PanicIfErr(err)
+		request.Id = id
+		log.Print(request)
+		result, err := c.ServiceModel.UpdateToDo(g.Request.Context(), request)
+		if err != nil {
+			middleware.NotFound(g, err)
+		} else {
+			response := web.WebResponse{
+				Code:   http.StatusOK,
+				Status: "OK",
+				Data:   result,
+			}
+			g.JSON(http.StatusOK, response)
+		}
 	}
 
 }
 
 func (c *ControllerImpl) Delete(g *gin.Context) {
-	id := g.Param("id")
-	c.ServiceModel.DeleteToDo(g.Request.Context(), id)
-	g.JSON(http.StatusOK, gin.H{"code": http.StatusOK, "msg": "Successfully delete data"})
-}
-
-func (c *ControllerImpl) DeleteActivity(g *gin.Context) {
 	stringId := g.Params.ByName("id")
 	id, err := strconv.Atoi(stringId)
 	helper.PanicIfErr(err)
-	c.ServiceModel.DeleteActivity(g.Request.Context(), id)
-	response := web.WebResponse{
-		Code:   http.StatusOK,
-		Status: "OK",
+	err = c.ServiceModel.DeleteToDo(g.Request.Context(), id)
+	if err != nil {
+		middleware.NotFound(g, err)
+	} else {
+		response := web.WebResponse{
+			Code:   http.StatusOK,
+			Status: "OK",
+		}
+		g.JSON(http.StatusOK, response)
 	}
-	g.JSON(http.StatusOK, response)
 }
 
 func (c *ControllerImpl) FindCourseById(g *gin.Context) {
-	id := g.Params.ByName("id")
-	if id == "" {
+	stringId := g.Params.ByName("id")
+	id, err := strconv.Atoi(stringId)
+	helper.PanicIfErr(err)
+	if id == 0 {
 		g.AbortWithStatusJSON(http.StatusNotFound,
 			gin.H{
 				"code": http.StatusNotFound,
@@ -138,7 +149,6 @@ func (c *ControllerImpl) CreateActivity(g *gin.Context) {
 	request.CreatedAt = time.Now()
 	err := g.ShouldBindJSON(&request)
 	if err != nil {
-
 		g.AbortWithStatusJSON(http.StatusBadRequest,
 			web.WebResponse{
 				Status:  "Bad request",
@@ -171,23 +181,26 @@ func (c *ControllerImpl) FindAllActivity(g *gin.Context) {
 func (c *ControllerImpl) UpdateActivity(g *gin.Context) {
 	request := model.Activity{}
 	err := g.ShouldBindJSON(&request)
-
 	//check if bind json error
 	if err != nil {
-
-		g.AbortWithStatusJSON(http.StatusInternalServerError,
-			gin.H{
-				"code": http.StatusInternalServerError,
-				"msg":  err.Error(),
-			})
+		middleware.BadRequest(g, err)
 	} else {
 		stringId := g.Param("idactivity")
 		id, err := strconv.Atoi(stringId)
 		helper.PanicIfErr(err)
 		request.Id = id
 		log.Print(request)
-		result := c.ServiceModel.UpdateActivity(g.Request.Context(), request)
-		g.JSON(http.StatusOK, result)
+		result, err := c.ServiceModel.UpdateActivity(g.Request.Context(), request)
+		if err != nil {
+			middleware.NotFound(g, err)
+		} else {
+			response := web.WebResponse{
+				Code:   http.StatusOK,
+				Status: "OK",
+				Data:   result,
+			}
+			g.JSON(http.StatusOK, response)
+		}
 	}
 
 }
@@ -196,13 +209,11 @@ func (c *ControllerImpl) FindActivityById(g *gin.Context) {
 	stringId := g.Params.ByName("id")
 	id, err := strconv.Atoi(stringId)
 	helper.PanicIfErr(err)
-	if id == 0 {
-		g.AbortWithStatusJSON(http.StatusNotFound,
-			gin.H{
-				"code": http.StatusNotFound,
-				"msg":  "Id not found"})
+
+	result, err := c.ServiceModel.FindActivityById(g.Request.Context(), id)
+	if err != nil {
+		middleware.NotFound(g, err)
 	} else {
-		result := c.ServiceModel.FindActivityById(g.Request.Context(), id)
 		response := web.WebResponse{
 			Code:   http.StatusOK,
 			Status: "OK",
@@ -211,4 +222,20 @@ func (c *ControllerImpl) FindActivityById(g *gin.Context) {
 		g.JSON(http.StatusOK, response)
 	}
 
+}
+
+func (c *ControllerImpl) DeleteActivity(g *gin.Context) {
+	stringId := g.Params.ByName("id")
+	id, err := strconv.Atoi(stringId)
+	helper.PanicIfErr(err)
+	err = c.ServiceModel.DeleteActivity(g.Request.Context(), id)
+	if err != nil {
+		middleware.NotFound(g, err)
+	} else {
+		response := web.WebResponse{
+			Code:   http.StatusOK,
+			Status: "OK",
+		}
+		g.JSON(http.StatusOK, response)
+	}
 }

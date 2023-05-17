@@ -15,11 +15,13 @@ type User struct {
 }
 
 type Todo struct {
-	Id        int       `json:"id"`
-	Title     string    `json:"title"`
-	Priority  string    `json:"priority"`
-	Isactive  bool      `json:"is_active"`
-	CreatedAt time.Time `json:"created_at"`
+	Id         int       `json:"id"`
+	ActivityId int       `gorm:"size:40" json:"activity_group_id"`
+	Activities Activity  `gorm:"foreignKey:ActivityId" json:"-"`
+	Title      string    `gorm:"not null; size:30" json:"title"`
+	Priority   string    `gorm:"not null; size:30; default:very-high" json:"priority"`
+	Isactive   bool      `gorm:"not null; size:30" json:"is_active"`
+	CreatedAt  time.Time `json:"created_at"`
 }
 
 type Activity struct {

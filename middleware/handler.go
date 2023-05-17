@@ -11,16 +11,6 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func NewMiddleware() gin.HandlerFunc {
-	return func(ctx *gin.Context) {
-		if ctx.GetHeader("X-API-KEY") == "RAHASIA" {
-			return
-		}
-
-		ctx.Next()
-	}
-}
-
 func AuthJWT() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		key := strconv.AppendBool([]byte(model.Key), true)
@@ -32,4 +22,20 @@ func AuthJWT() gin.HandlerFunc {
 		}
 		log.Print(gin.H{"data": claim.Username})
 	}
+}
+
+func NotFound(c *gin.Context, err error) {
+	response := web.WebResponse{
+		Status:  "error",
+		Message: err.Error(),
+	}
+	c.AbortWithStatusJSON(http.StatusNotFound, response)
+}
+
+func BadRequest(c *gin.Context, err error) {
+	response := web.WebResponse{
+		Status:  "error",
+		Message: "title cannot be null",
+	}
+	c.AbortWithStatusJSON(http.StatusNotFound, response)
 }

@@ -13,7 +13,7 @@ import (
 
 func Tables() []interface{} {
 	return []interface{}{
-		&migrate.ActivityTable{},
+		&migrate.TodoTable{},
 	}
 }
 

@@ -22,48 +22,55 @@ func NewService(c repository.Repository, DB *sql.DB) Service {
 	}
 }
 
-func (s *ServiceImpl) CreateToDo(ctx context.Context, req model.Course) model.Course {
+func (s *ServiceImpl) CreateToDo(ctx context.Context, req model.Todo) model.Todo {
 	tx, err := s.DB.Begin()
 	helper.PanicIfErr(err)
 	defer helper.CommitorRollback(tx)
 
-	request := model.Course{
-		Id:        req.Id,
-		Name:      req.Name,
-		Price:     req.Price,
-		Category:  req.Category,
-		Thumbnail: req.Thumbnail,
+	request := model.Todo{
+		Id:         req.Id,
+		Title:      req.Title,
+		ActivityId: req.ActivityId,
+		Isactive:   req.Isactive,
 	}
-	Course := s.Rep.CreateToDo(ctx, tx, request)
+	Todo := s.Rep.CreateToDo(ctx, tx, request)
 
-	return Course
+	return Todo
 
 }
 
-func (s *ServiceImpl) UpdateToDo(ctx context.Context, req model.Course) model.Course {
+func (s *ServiceImpl) UpdateToDo(ctx context.Context, req model.Todo) (model.Todo, error) {
 	tx, err := s.DB.Begin()
 	helper.PanicIfErr(err)
 	defer helper.CommitorRollback(tx)
 
 	id := req.Id
-	findId, err := s.Rep.FindTodo(ctx, tx, id)
-	helper.PanicIfErr(err)
-	updateCourse := s.Rep.UpdateToDo(ctx, tx, findId)
-	return updateCourse
+	model, err := s.Rep.FindTodo(ctx, tx, id)
+	if err != nil {
+		return model, err
+	} else {
+
+		model.Title = req.Title
+		model = s.Rep.UpdateToDo(ctx, tx, model)
+		return model, nil
+	}
 }
 
-func (s *ServiceImpl) DeleteToDo(ctx context.Context, id string) {
+func (s *ServiceImpl) DeleteToDo(ctx context.Context, id int) error {
 	tx, err := s.DB.Begin()
 	helper.PanicIfErr(err)
 	defer helper.CommitorRollback(tx)
 	req, err := s.Rep.FindTodo(ctx, tx, id)
-	s.Rep.FindTodo(ctx, tx, req.Id)
-	helper.PanicIfErr(err)
-	s.Rep.DeleteToDo(ctx, tx, req.Id)
+	if err != nil {
+		return err
+	} else {
+		s.Rep.DeleteToDo(ctx, tx, req.Id)
+		return nil
+	}
 
 }
 
-func (s *ServiceImpl) FindTodo(ctx context.Context, id string) model.Course {
+func (s *ServiceImpl) FindTodo(ctx context.Context, id int) model.Todo {
 	tx, err := s.DB.Begin()
 	helper.PanicIfErr(err)
 	defer helper.CommitorRollback(tx)
@@ -75,19 +82,14 @@ func (s *ServiceImpl) FindTodo(ctx context.Context, id string) model.Course {
 
 }
 
-func (s *ServiceImpl) FindAllToDo(ctx context.Context) []model.Course {
+func (s *ServiceImpl) FindAllToDo(ctx context.Context) []model.Todo {
 	tx, err := s.DB.Begin()
 	helper.PanicIfErr(err)
 	defer helper.CommitorRollback(tx)
 
-	slicemodel := s.Rep.FindAllToDo(ctx, tx)
+	todo := s.Rep.FindAllToDo(ctx, tx)
 
-	var sliceCourse []model.Course
-
-	for _, v := range slicemodel {
-		sliceCourse = append(sliceCourse, v)
-	}
-	return sliceCourse
+	return todo
 }
 
 func (s *ServiceImpl) CreateActivity(ctx context.Context, request model.Activity) model.Activity {
@@ -110,7 +112,7 @@ func (s *ServiceImpl) CreateActivity(ctx context.Context, request model.Activity
 
 }
 
-func (s *ServiceImpl) UpdateActivity(ctx context.Context, request model.Activity) model.Activity {
+func (s *ServiceImpl) UpdateActivity(ctx context.Context, request model.Activity) (model.Activity, error) {
 	tx, err := s.DB.Begin()
 	if err != nil {
 		log.Fatal(err)
@@ -119,20 +121,27 @@ func (s *ServiceImpl) UpdateActivity(ctx context.Context, request model.Activity
 
 	category, err := s.Rep.FindActivityById(ctx, tx, request.Id)
 	if err != nil {
-		panic(err.Error())
+		return category, err
+	} else {
+
+		category.Title = request.Title
+		category = s.Rep.UpdateActivity(ctx, tx, category)
+		return category, nil
 	}
-	category.Title = request.Title
-	category = s.Rep.UpdateActivity(ctx, tx, category)
-	return category
 }
 
-func (s *ServiceImpl) DeleteActivity(ctx context.Context, id int) {
+func (s *ServiceImpl) DeleteActivity(ctx context.Context, id int) error {
 	tx, err := s.DB.Begin()
 	helper.PanicIfErr(err)
 	defer helper.CommitorRollback(tx)
 	req, err := s.Rep.FindActivityById(ctx, tx, id)
-	helper.PanicIfErr(err)
-	s.Rep.DeleteActivity(ctx, tx, req.Id)
+	if err != nil {
+
+		return err
+	} else {
+		s.Rep.DeleteActivity(ctx, tx, req.Id)
+		return nil
+	}
 
 }
 
@@ -146,13 +155,14 @@ func (s *ServiceImpl) FindAllActivity(ctx context.Context) []model.Activity {
 	return activities
 }
 
-func (s *ServiceImpl) FindActivityById(ctx context.Context, id int) model.Activity {
+func (s *ServiceImpl) FindActivityById(ctx context.Context, id int) (model.Activity, error) {
 	tx, err := s.DB.Begin()
 	helper.PanicIfErr(err)
 	defer helper.CommitorRollback(tx)
 	model, err := s.Rep.FindActivityById(ctx, tx, id)
 	if err != nil {
 		log.Print(err.Error())
+		return model, err
 	}
-	return model
+	return model, nil
 }

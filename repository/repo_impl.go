@@ -10,7 +10,6 @@ import (
 
 	"github.com/Alfeenn/todo-list/helper"
 	"github.com/Alfeenn/todo-list/model"
-	"github.com/google/uuid"
 )
 
 type RepoImpl struct{}
@@ -19,60 +18,63 @@ func NewRepository() Repository {
 	return &RepoImpl{}
 }
 
-func (r *RepoImpl) CreateToDo(ctx context.Context, tx *sql.Tx, category model.Course) model.Course {
-	SQL := "INSERT INTO courses(id,name,price,category,thumbnail) VALUES(?,?,?,?,?)"
-	category.Id = uuid.NewString()
-	_, err := tx.ExecContext(ctx, SQL,
-		category.Id, category.Name, category.Price,
-		category.Category, category.Thumbnail)
-	helper.PanicIfErr(err)
+func (r *RepoImpl) CreateToDo(ctx context.Context, tx *sql.Tx, category model.Todo) model.Todo {
+	SQL := "INSERT INTO todo(activity_id,title,isactive) VALUES(?,?,?)"
+	rows, err := tx.ExecContext(ctx, SQL, category.ActivityId, category.Title,
+		category.Isactive)
+	id, err := rows.LastInsertId()
+	if err != nil {
+		log.Fatal(err)
+
+	}
+	category.Id = int(id)
 	return category
 }
 
-func (r *RepoImpl) UpdateToDo(ctx context.Context, tx *sql.Tx, category model.Course) model.Course {
-	SQL := "UPDATE courses SET name=?,price=?,category=?,thumbnail=? WHERE id=?"
+func (r *RepoImpl) UpdateToDo(ctx context.Context, tx *sql.Tx, category model.Todo) model.Todo {
+	SQL := "UPDATE todo SET title=? WHERE id=?"
 
-	_, err := tx.ExecContext(ctx, SQL, category.Name, category.Price, category.Category, category.Thumbnail, category.Id)
+	_, err := tx.ExecContext(ctx, SQL, category.Title, category.Id)
 	helper.PanicIfErr(err)
 
 	return category
 
 }
 
-func (r *RepoImpl) DeleteToDo(ctx context.Context, tx *sql.Tx, id string) {
-	SQL := "DELETE FROM user WHERE id=?"
+func (r *RepoImpl) DeleteToDo(ctx context.Context, tx *sql.Tx, id int) {
+	SQL := "DELETE FROM todo WHERE id=?"
 	_, err := tx.ExecContext(ctx, SQL, id)
 	helper.PanicIfErr(err)
 }
 
-func (r *RepoImpl) FindAllToDo(ctx context.Context, tx *sql.Tx) []model.Course {
-	sql := "SELECT *FROM courses"
+func (r *RepoImpl) FindAllToDo(ctx context.Context, tx *sql.Tx) []model.Todo {
+	sql := "SELECT *FROM todo"
 	rows, err := tx.QueryContext(ctx, sql)
 	helper.PanicIfErr(err)
 	defer rows.Close()
 
-	var categoryCourse []model.Course
+	var categoryTodo []model.Todo
 
 	for rows.Next() {
-		course := model.Course{}
-		err := rows.Scan(&course.Id, &course.Name, &course.Price, &course.Category,
-			&course.Thumbnail)
+		Todo := model.Todo{}
+		err := rows.Scan(&Todo.Id, &Todo.ActivityId, &Todo.Title, &Todo.Priority,
+			&Todo.Isactive)
 		helper.PanicIfErr(err)
-		categoryCourse = append(categoryCourse, course)
+		categoryTodo = append(categoryTodo, Todo)
 	}
-	return categoryCourse
+	return categoryTodo
 }
 
-func (r *RepoImpl) FindTodo(ctx context.Context, tx *sql.Tx, id string) (model.Course, error) {
-	SQL := "SELECT *FROM courses WHERE id =?"
+func (r *RepoImpl) FindTodo(ctx context.Context, tx *sql.Tx, id int) (model.Todo, error) {
+	SQL := "SELECT *FROM todo WHERE id =?"
 
 	rows, err := tx.QueryContext(ctx, SQL, id)
 	helper.PanicIfErr(err)
 	defer rows.Close()
-	model := model.Course{}
+	model := model.Todo{}
 	if rows.Next() {
-		rows.Scan(&model.Id, &model.Name,
-			&model.Category, &model.Thumbnail, &model.Price)
+		rows.Scan(&model.Id, &model.ActivityId,
+			&model.Title, &model.Priority, &model.Isactive)
 
 		return model, nil
 	} else {
@@ -82,10 +84,9 @@ func (r *RepoImpl) FindTodo(ctx context.Context, tx *sql.Tx, id string) (model.C
 }
 
 func (m *RepoImpl) CreateActivity(ctx context.Context, tx *sql.Tx, category model.Activity) model.Activity {
-	SQL := `INSERT INTO activity(title,email,created_at) VALUES(?,?,?)`
-
-	rows, err := tx.ExecContext(ctx, SQL, category.Title, category.Email, category.CreatedAt)
-	helper.PanicIfErr(err)
+	SQL := `INSERT INTO activities(title,email,created_at) VALUES(?,?,?)`
+	category.CreatedAt.Add(time.Since(time.Now()))
+	rows, _ := tx.ExecContext(ctx, SQL, category.Title, category.Email, category.CreatedAt)
 	id, err := rows.LastInsertId()
 	if err != nil {
 		log.Fatal(err)
@@ -96,20 +97,20 @@ func (m *RepoImpl) CreateActivity(ctx context.Context, tx *sql.Tx, category mode
 }
 
 func (r *RepoImpl) UpdateActivity(ctx context.Context, tx *sql.Tx, category model.Activity) model.Activity {
-	SQL := `UPDATE activity set title=? WHERE id=?`
+	SQL := `UPDATE activities set title=? WHERE id=?`
 	_, err := tx.ExecContext(ctx, SQL, category.Title, category.Id)
 	helper.PanicIfErr(err)
 	return category
 }
 
 func (r *RepoImpl) DeleteActivity(ctx context.Context, tx *sql.Tx, id int) {
-	SQL := `DELETE FROM activity WHERE id=?`
+	SQL := `DELETE FROM activities WHERE id=?`
 	_, err := tx.ExecContext(ctx, SQL, id)
 	helper.PanicIfErr(err)
 }
 
 func (r *RepoImpl) FindAllActivity(ctx context.Context, tx *sql.Tx) []model.Activity {
-	SQL := "SELECT *FROM activity"
+	SQL := "SELECT *FROM activities"
 	rows, err := tx.QueryContext(ctx, SQL)
 	helper.PanicIfErr(err)
 	defer rows.Close()
@@ -131,7 +132,7 @@ func (r *RepoImpl) FindAllActivity(ctx context.Context, tx *sql.Tx) []model.Acti
 }
 
 func (r *RepoImpl) FindActivityById(ctx context.Context, tx *sql.Tx, id int) (model.Activity, error) {
-	SQL := "SELECT *FROM activity WHERE id =?"
+	SQL := "SELECT *FROM activities WHERE id =?"
 
 	rows, err := tx.QueryContext(ctx, SQL, id)
 	helper.PanicIfErr(err)
@@ -143,7 +144,8 @@ func (r *RepoImpl) FindActivityById(ctx context.Context, tx *sql.Tx, id int) (mo
 
 		return model, nil
 	} else {
-		return model, errors.New("no data")
+		result := fmt.Sprintf("Activity with ID %v Not Found", id)
+		return model, errors.New(result)
 	}
 
 }

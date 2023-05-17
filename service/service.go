@@ -7,14 +7,14 @@ import (
 )
 
 type Service interface {
-	CreateToDo(ctx context.Context, req model.Course) model.Course
-	UpdateToDo(ctx context.Context, req model.Course) model.Course
-	DeleteToDo(ctx context.Context, id string)
-	FindTodo(ctx context.Context, id string) model.Course
-	FindAllToDo(ctx context.Context) []model.Course
+	CreateToDo(ctx context.Context, req model.Todo) model.Todo
+	UpdateToDo(ctx context.Context, req model.Todo) (model.Todo, error)
+	DeleteToDo(ctx context.Context, id int) error
+	FindTodo(ctx context.Context, id int) model.Todo
+	FindAllToDo(ctx context.Context) []model.Todo
 	CreateActivity(ctx context.Context, request model.Activity) model.Activity
-	UpdateActivity(ctx context.Context, request model.Activity) model.Activity
-	DeleteActivity(ctx context.Context, id int)
+	UpdateActivity(ctx context.Context, request model.Activity) (model.Activity, error)
+	DeleteActivity(ctx context.Context, id int) error
 	FindAllActivity(ctx context.Context) []model.Activity
-	FindActivityById(ctx context.Context, id int) model.Activity
+	FindActivityById(ctx context.Context, id int) (model.Activity, error)
 }

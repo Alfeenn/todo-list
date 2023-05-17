@@ -35,7 +35,6 @@ func main() {
 		activity.DELETE("/:id", controller.DeleteActivity)
 		activity.PATCH("/:idactivity", controller.UpdateActivity)
 		activity.GET("/class/:id", controller.FindCourseById)
-
 	}
 	engine.Run("localhost:8000")
 }

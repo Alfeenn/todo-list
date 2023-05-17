@@ -6,10 +6,10 @@ import (
 	"github.com/Alfeenn/todo-list/model"
 )
 
-type ClassTable struct {
-	model.Class `gorm:"embedded"`
+type TodoTable struct {
+	model.Todo `gorm:"embedded"`
 }
 
-func (ClassTable) TableName() string {
-	return os.Getenv("DBNAME") + ".class"
+func (TodoTable) TableName() string {
+	return os.Getenv("MYSQL_DBNAME") + ".todo"
 }
