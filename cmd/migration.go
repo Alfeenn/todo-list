@@ -4,11 +4,8 @@ import (
 	"flag"
 
 	"github.com/Alfeenn/todo-list/databases"
-	"github.com/Alfeenn/todo-list/middleware"
 	"gorm.io/gorm"
 )
-
-var enforcer = middleware.UserPolicy()
 
 func Command(tables []interface{}) (bool, error) {
 	// MigrateCmd the schema

@@ -4,6 +4,7 @@ import (
 	"github.com/Alfeenn/todo-list/app"
 	"github.com/Alfeenn/todo-list/cmd"
 	"github.com/Alfeenn/todo-list/controller"
+	"github.com/Alfeenn/todo-list/middleware"
 	"github.com/Alfeenn/todo-list/repository"
 	"github.com/Alfeenn/todo-list/service"
 	"github.com/gin-gonic/gin"
@@ -19,8 +20,8 @@ func main() {
 	repo := repository.NewRepository()
 	service := service.NewService(repo, db)
 	controller := controller.NewController(service)
-	engine.Use(gin.Recovery())
 	engine.Use(gin.Logger())
+	engine.Use(gin.CustomRecovery(middleware.ErrorRecovery))
 	baseRoute := engine.Group("")
 	todo := baseRoute.Group("/todo-items")
 	{

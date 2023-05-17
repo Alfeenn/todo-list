@@ -97,17 +97,14 @@ func (c *ControllerImpl) FindTodoById(g *gin.Context) {
 	id, err := strconv.Atoi(stringId)
 	helper.PanicIfErr(err)
 
-	result, err := c.ServiceModel.FindTodo(g.Request.Context(), id)
-	if err != nil {
-		middleware.NotFound(g, err)
-	} else {
-		response := web.WebResponse{
-			Code:   http.StatusOK,
-			Status: "OK",
-			Data:   result,
-		}
-		g.JSON(http.StatusOK, response)
+	result := c.ServiceModel.FindTodo(g.Request.Context(), id)
+
+	response := web.WebResponse{
+		Code:   http.StatusOK,
+		Status: "OK",
+		Data:   result,
 	}
+	g.JSON(http.StatusOK, response)
 }
 
 func (c *ControllerImpl) FindCourseByCategory(g *gin.Context) {
@@ -190,30 +187,7 @@ func (c *ControllerImpl) UpdateActivity(g *gin.Context) {
 		helper.PanicIfErr(err)
 		request.Id = id
 		log.Print(request)
-		result, err := c.ServiceModel.UpdateActivity(g.Request.Context(), request)
-		if err != nil {
-			middleware.NotFound(g, err)
-		} else {
-			response := web.WebResponse{
-				Code:   http.StatusOK,
-				Status: "OK",
-				Data:   result,
-			}
-			g.JSON(http.StatusOK, response)
-		}
-	}
-
-}
-
-func (c *ControllerImpl) FindActivityById(g *gin.Context) {
-	stringId := g.Params.ByName("id")
-	id, err := strconv.Atoi(stringId)
-	helper.PanicIfErr(err)
-
-	result, err := c.ServiceModel.FindActivityById(g.Request.Context(), id)
-	if err != nil {
-		middleware.NotFound(g, err)
-	} else {
+		result := c.ServiceModel.UpdateActivity(g.Request.Context(), request)
 		response := web.WebResponse{
 			Code:   http.StatusOK,
 			Status: "OK",
@@ -224,18 +198,30 @@ func (c *ControllerImpl) FindActivityById(g *gin.Context) {
 
 }
 
+func (c *ControllerImpl) FindActivityById(g *gin.Context) {
+	stringId := g.Params.ByName("id")
+	id, err := strconv.Atoi(stringId)
+	helper.PanicIfErr(err)
+
+	result := c.ServiceModel.FindActivityById(g.Request.Context(), id)
+
+	response := web.WebResponse{
+		Code:   http.StatusOK,
+		Status: "OK",
+		Data:   result,
+	}
+	g.JSON(http.StatusOK, response)
+
+}
+
 func (c *ControllerImpl) DeleteActivity(g *gin.Context) {
 	stringId := g.Params.ByName("id")
 	id, err := strconv.Atoi(stringId)
 	helper.PanicIfErr(err)
-	err = c.ServiceModel.DeleteActivity(g.Request.Context(), id)
-	if err != nil {
-		middleware.NotFound(g, err)
-	} else {
-		response := web.WebResponse{
-			Code:   http.StatusOK,
-			Status: "OK",
-		}
-		g.JSON(http.StatusOK, response)
+	c.ServiceModel.DeleteActivity(g.Request.Context(), id)
+	response := web.WebResponse{
+		Code:   http.StatusOK,
+		Status: "OK",
 	}
+	g.JSON(http.StatusOK, response)
 }
