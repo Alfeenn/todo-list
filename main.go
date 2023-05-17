@@ -22,10 +22,11 @@ func main() {
 	engine.Use(gin.Recovery())
 	engine.Use(gin.Logger())
 	baseRoute := engine.Group("")
-	admin := baseRoute.Group("/admin")
+	todo := baseRoute.Group("/todo-items")
 	{
-		admin.GET("/course", controller.FindAll)
-		admin.POST("/course", controller.Create)
+		todo.GET("", controller.FindAll)
+		todo.GET("/:id", controller.FindTodoById)
+		todo.POST("", controller.Create)
 	}
 	activity := baseRoute.Group("/activity-groups")
 	{
@@ -34,7 +35,7 @@ func main() {
 		activity.POST("", controller.CreateActivity)
 		activity.DELETE("/:id", controller.DeleteActivity)
 		activity.PATCH("/:idactivity", controller.UpdateActivity)
-		activity.GET("/class/:id", controller.FindCourseById)
+
 	}
 	engine.Run("localhost:8000")
 }

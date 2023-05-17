@@ -22,6 +22,7 @@ func (r *RepoImpl) CreateToDo(ctx context.Context, tx *sql.Tx, category model.To
 	SQL := "INSERT INTO todo(activity_id,title,isactive) VALUES(?,?,?)"
 	rows, err := tx.ExecContext(ctx, SQL, category.ActivityId, category.Title,
 		category.Isactive)
+	helper.PanicIfErr(err)
 	id, err := rows.LastInsertId()
 	if err != nil {
 		log.Fatal(err)
@@ -57,8 +58,10 @@ func (r *RepoImpl) FindAllToDo(ctx context.Context, tx *sql.Tx) []model.Todo {
 
 	for rows.Next() {
 		Todo := model.Todo{}
+		current := fmt.Sprint(Todo.CreatedAt)
 		err := rows.Scan(&Todo.Id, &Todo.ActivityId, &Todo.Title, &Todo.Priority,
-			&Todo.Isactive)
+			&Todo.Isactive, &current)
+		Todo.CreatedAt, _ = time.Parse("2006-01-02 15:04:05", current)
 		helper.PanicIfErr(err)
 		categoryTodo = append(categoryTodo, Todo)
 	}
@@ -74,11 +77,12 @@ func (r *RepoImpl) FindTodo(ctx context.Context, tx *sql.Tx, id int) (model.Todo
 	model := model.Todo{}
 	if rows.Next() {
 		rows.Scan(&model.Id, &model.ActivityId,
-			&model.Title, &model.Priority, &model.Isactive)
+			&model.Title, &model.Priority, &model.Isactive, &model.CreatedAt)
 
 		return model, nil
 	} else {
-		return model, errors.New("no data")
+		result := fmt.Sprintf("Todo with ID %v Not Found", id)
+		return model, errors.New(result)
 	}
 
 }

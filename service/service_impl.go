@@ -32,6 +32,10 @@ func (s *ServiceImpl) CreateToDo(ctx context.Context, req model.Todo) model.Todo
 		Title:      req.Title,
 		ActivityId: req.ActivityId,
 		Isactive:   req.Isactive,
+		CreatedAt:  req.CreatedAt,
+	}
+	if request.Priority == "" {
+		request.Priority = "very-high"
 	}
 	Todo := s.Rep.CreateToDo(ctx, tx, request)
 
@@ -70,15 +74,16 @@ func (s *ServiceImpl) DeleteToDo(ctx context.Context, id int) error {
 
 }
 
-func (s *ServiceImpl) FindTodo(ctx context.Context, id int) model.Todo {
+func (s *ServiceImpl) FindTodo(ctx context.Context, id int) (model.Todo, error) {
 	tx, err := s.DB.Begin()
 	helper.PanicIfErr(err)
 	defer helper.CommitorRollback(tx)
 	model, err := s.Rep.FindTodo(ctx, tx, id)
 	if err != nil {
-		panic(err)
+		log.Print(err.Error())
+		return model, err
 	}
-	return model
+	return model, nil
 
 }
 

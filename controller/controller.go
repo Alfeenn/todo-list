@@ -9,7 +9,7 @@ type Controller interface {
 	Update(g *gin.Context)
 	Delete(g *gin.Context)
 	FindCourseByCategory(g *gin.Context)
-	FindCourseById(g *gin.Context)
+	FindTodoById(g *gin.Context)
 	FindAll(g *gin.Context)
 	CreateActivity(g *gin.Context)
 	UpdateActivity(g *gin.Context)

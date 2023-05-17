@@ -28,6 +28,8 @@ func (c *ControllerImpl) Create(g *gin.Context) {
 	request := model.Todo{}
 	request.CreatedAt = time.Now()
 	err := g.ShouldBindJSON(&request)
+	log.Print(request)
+	log.Print("error", err)
 	if err != nil {
 		g.AbortWithStatusJSON(http.StatusBadRequest,
 			web.WebResponse{
@@ -49,6 +51,7 @@ func (c *ControllerImpl) Create(g *gin.Context) {
 func (c *ControllerImpl) Update(g *gin.Context) {
 	request := model.Todo{}
 	err := g.ShouldBindJSON(&request)
+	log.Print(request)
 	//check if bind json error
 	if err != nil {
 		middleware.BadRequest(g, err)
@@ -89,17 +92,15 @@ func (c *ControllerImpl) Delete(g *gin.Context) {
 	}
 }
 
-func (c *ControllerImpl) FindCourseById(g *gin.Context) {
+func (c *ControllerImpl) FindTodoById(g *gin.Context) {
 	stringId := g.Params.ByName("id")
 	id, err := strconv.Atoi(stringId)
 	helper.PanicIfErr(err)
-	if id == 0 {
-		g.AbortWithStatusJSON(http.StatusNotFound,
-			gin.H{
-				"code": http.StatusNotFound,
-				"msg":  "Id not found"})
+
+	result, err := c.ServiceModel.FindTodo(g.Request.Context(), id)
+	if err != nil {
+		middleware.NotFound(g, err)
 	} else {
-		result := c.ServiceModel.FindTodo(g.Request.Context(), id)
 		response := web.WebResponse{
 			Code:   http.StatusOK,
 			Status: "OK",
@@ -107,7 +108,6 @@ func (c *ControllerImpl) FindCourseById(g *gin.Context) {
 		}
 		g.JSON(http.StatusOK, response)
 	}
-
 }
 
 func (c *ControllerImpl) FindCourseByCategory(g *gin.Context) {
