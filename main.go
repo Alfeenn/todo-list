@@ -38,5 +38,5 @@ func main() {
 		activity.PATCH("/:idactivity", controller.UpdateActivity)
 
 	}
-	engine.Run("localhost:3030")
+	engine.Run(":3030")
 }

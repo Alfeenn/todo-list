@@ -7,9 +7,9 @@ import (
 )
 
 type TodoTable struct {
-	model.Todo `gorm:"embedded"`
+	model.Todos `gorm:"embedded"`
 }
 
 func (TodoTable) TableName() string {
-	return os.Getenv("MYSQL_DBNAME") + ".todo"
+	return os.Getenv("MYSQL_DBNAME") + ".todos"
 }

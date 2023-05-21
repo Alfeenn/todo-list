@@ -27,7 +27,7 @@ func NotFoundError(g *gin.Context, err interface{}) bool {
 
 	if ok {
 		g.AbortWithStatusJSON(404, web.WebResponse{
-			Status:  "error",
+			Status:  "Not Found",
 			Message: exception.Err,
 		})
 		return true
@@ -38,7 +38,7 @@ func NotFoundError(g *gin.Context, err interface{}) bool {
 
 func InternalServer(g *gin.Context, err interface{}) {
 	g.AbortWithStatusJSON(500, web.WebResponse{
-		Status: "Internal Server Error",
+		Status: "Bad Request",
 		Data:   err,
 	})
 }

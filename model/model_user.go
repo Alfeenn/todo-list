@@ -14,19 +14,31 @@ type User struct {
 	Role     string `gorm:"not null; default:user size:10"`
 }
 
-type Todo struct {
-	Id         int       `json:"id"`
-	ActivityId int       `gorm:"size:40" json:"activity_group_id"`
-	Activities Activity  `gorm:"foreignKey:ActivityId" json:"-"`
-	Title      string    `gorm:"not null; size:30" json:"title" binding:"required"`
-	Priority   string    `gorm:"not null; size:30; default:very-high" json:"priority"`
-	Isactive   bool      `gorm:"not null; size:30" json:"is_active"`
-	CreatedAt  time.Time `json:"created_at"`
+type Todos struct {
+	Id              int       `gorm:"primary_key; column:todo_id" json:"id"`
+	ActivityGroupId int       `gorm:"size:40" json:"activity_group_id"`
+	Activities      Activity  `gorm:"foreignKey:ActivityGroupId" json:"-"`
+	Title           string    `gorm:"not null; size:30" json:"title" binding:"required"`
+	Priority        string    `gorm:"not null; size:30; default:very-high" json:"priority"`
+	Isactive        bool      `gorm:"not null; size:30" json:"is_active"`
+	CreatedAt       time.Time `json:"createdAt"`
+	UpdatedAt       time.Time `json:"updatedAt"`
 }
 
 type Activity struct {
-	Id        int       `gorm:"primary_key; column:id" json:"id"`
-	Title     string    `gorm:"not null; size:30" json:"title" `
+	Id        int       `gorm:"primary_key; column:activity_id" json:"id"`
+	Title     string    `gorm:"not null; size:30" json:"title"  binding:"required"`
 	Email     string    `gorm:"not null; size:30" json:"email"`
-	CreatedAt time.Time `json:"created_at"`
+	CreatedAt time.Time `json:"createdAt"`
+	UpdatedAt time.Time `json:"updatedAt"`
+}
+
+type Todo struct {
+	Id         int       `json:"id"`
+	ActivityId int       `gorm:"size:40" json:"activity_group_id"`
+	Title      string    `gorm:"not null; size:30" json:"title" binding:"required"`
+	Priority   string    `gorm:"not null; size:30; default:very-high" json:"priority"`
+	Isactive   bool      `gorm:"not null; size:30" json:"is_active"`
+	CreatedAt  time.Time `json:"createdAt"`
+	UpdatedAt  time.Time `json:"updatedAt"`
 }

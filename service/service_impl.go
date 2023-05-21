@@ -34,6 +34,7 @@ func (s *ServiceImpl) CreateToDo(ctx context.Context, req model.Todo) model.Todo
 		ActivityId: req.ActivityId,
 		Isactive:   req.Isactive,
 		CreatedAt:  req.CreatedAt,
+		UpdatedAt:  req.UpdatedAt,
 	}
 	if request.Priority == "" {
 		request.Priority = "very-high"
@@ -54,7 +55,7 @@ func (s *ServiceImpl) UpdateToDo(ctx context.Context, req model.Todo) (model.Tod
 	if err != nil {
 		return model, err
 	} else {
-
+		model.UpdatedAt = req.UpdatedAt
 		model.Title = req.Title
 		model = s.Rep.UpdateToDo(ctx, tx, model)
 		return model, nil
@@ -104,8 +105,10 @@ func (s *ServiceImpl) CreateActivity(ctx context.Context, request model.Activity
 	}
 	defer helper.CommitorRollback(tx)
 	category := model.Activity{
-		Title: request.Title,
-		Email: request.Email, CreatedAt: request.CreatedAt,
+		Title:     request.Title,
+		Email:     request.Email,
+		CreatedAt: request.CreatedAt,
+		UpdatedAt: request.UpdatedAt,
 	}
 	category = s.Rep.CreateActivity(ctx, tx, category)
 	if err != nil {
@@ -129,7 +132,7 @@ func (s *ServiceImpl) UpdateActivity(ctx context.Context, request model.Activity
 	if err != nil {
 		panic(middleware.NewNotFound(err.Error()))
 	}
-
+	category.UpdatedAt = request.UpdatedAt
 	category.Title = request.Title
 	category = s.Rep.UpdateActivity(ctx, tx, category)
 	return category

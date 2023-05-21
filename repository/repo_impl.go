@@ -19,9 +19,9 @@ func NewRepository() Repository {
 }
 
 func (r *RepoImpl) CreateToDo(ctx context.Context, tx *sql.Tx, category model.Todo) model.Todo {
-	SQL := "INSERT INTO todo(activity_id,title,isactive) VALUES(?,?,?)"
+	SQL := "INSERT INTO todos(activity_id,title,isactive,created_at,updated_at) VALUES(?,?,?,?,?)"
 	rows, err := tx.ExecContext(ctx, SQL, category.ActivityId, category.Title,
-		category.Isactive)
+		category.Isactive, category.CreatedAt, category.UpdatedAt)
 	helper.PanicIfErr(err)
 	id, err := rows.LastInsertId()
 	if err != nil {
@@ -33,9 +33,9 @@ func (r *RepoImpl) CreateToDo(ctx context.Context, tx *sql.Tx, category model.To
 }
 
 func (r *RepoImpl) UpdateToDo(ctx context.Context, tx *sql.Tx, category model.Todo) model.Todo {
-	SQL := "UPDATE todo SET title=? WHERE id=?"
+	SQL := "UPDATE todo SET title=?,updated_at=? WHERE todo_id=?"
 
-	_, err := tx.ExecContext(ctx, SQL, category.Title, category.Id)
+	_, err := tx.ExecContext(ctx, SQL, category.Title, category.UpdatedAt, category.Id)
 	helper.PanicIfErr(err)
 
 	return category
@@ -43,13 +43,13 @@ func (r *RepoImpl) UpdateToDo(ctx context.Context, tx *sql.Tx, category model.To
 }
 
 func (r *RepoImpl) DeleteToDo(ctx context.Context, tx *sql.Tx, id int) {
-	SQL := "DELETE FROM todo WHERE id=?"
+	SQL := "DELETE FROM todos WHERE todo_id=?"
 	_, err := tx.ExecContext(ctx, SQL, id)
 	helper.PanicIfErr(err)
 }
 
 func (r *RepoImpl) FindAllToDo(ctx context.Context, tx *sql.Tx) []model.Todo {
-	sql := "SELECT *FROM todo"
+	sql := "SELECT *FROM todos"
 	rows, err := tx.QueryContext(ctx, sql)
 	helper.PanicIfErr(err)
 	defer rows.Close()
@@ -59,9 +59,11 @@ func (r *RepoImpl) FindAllToDo(ctx context.Context, tx *sql.Tx) []model.Todo {
 	for rows.Next() {
 		Todo := model.Todo{}
 		current := fmt.Sprint(Todo.CreatedAt)
+		current2 := fmt.Sprint(Todo.UpdatedAt)
 		err := rows.Scan(&Todo.Id, &Todo.ActivityId, &Todo.Title, &Todo.Priority,
-			&Todo.Isactive, &current)
+			&Todo.Isactive, &current, &current2)
 		Todo.CreatedAt, _ = time.Parse("2006-01-02 15:04:05", current)
+		Todo.UpdatedAt, _ = time.Parse("2006-01-02 15:04:05", current2)
 		helper.PanicIfErr(err)
 		categoryTodo = append(categoryTodo, Todo)
 	}
@@ -69,16 +71,19 @@ func (r *RepoImpl) FindAllToDo(ctx context.Context, tx *sql.Tx) []model.Todo {
 }
 
 func (r *RepoImpl) FindTodo(ctx context.Context, tx *sql.Tx, id int) (model.Todo, error) {
-	SQL := "SELECT *FROM todo WHERE id =?"
+	SQL := "SELECT *FROM todos WHERE todo_id =?"
 
 	rows, err := tx.QueryContext(ctx, SQL, id)
 	helper.PanicIfErr(err)
 	defer rows.Close()
 	model := model.Todo{}
 	if rows.Next() {
+		current := fmt.Sprint(model.CreatedAt)
+		current2 := fmt.Sprint(model.UpdatedAt)
 		rows.Scan(&model.Id, &model.ActivityId,
-			&model.Title, &model.Priority, &model.Isactive, &model.CreatedAt)
-
+			&model.Title, &model.Priority, &model.Isactive, &current, &current2)
+		model.CreatedAt, _ = time.Parse("2006-01-02 15:04:05", current)
+		model.UpdatedAt, _ = time.Parse("2006-01-02 15:04:05", current2)
 		return model, nil
 	} else {
 		result := fmt.Sprintf("Todo with ID %v Not Found", id)
@@ -88,9 +93,8 @@ func (r *RepoImpl) FindTodo(ctx context.Context, tx *sql.Tx, id int) (model.Todo
 }
 
 func (m *RepoImpl) CreateActivity(ctx context.Context, tx *sql.Tx, category model.Activity) model.Activity {
-	SQL := `INSERT INTO activities(title,email,created_at) VALUES(?,?,?)`
-	category.CreatedAt.Add(time.Since(time.Now()))
-	rows, _ := tx.ExecContext(ctx, SQL, category.Title, category.Email, category.CreatedAt)
+	SQL := `INSERT INTO activities(title,email,created_at,updated_at) VALUES(?,?,?,?)`
+	rows, _ := tx.ExecContext(ctx, SQL, category.Title, category.Email, category.CreatedAt, category.UpdatedAt)
 	id, err := rows.LastInsertId()
 	if err != nil {
 		log.Fatal(err)
@@ -101,14 +105,14 @@ func (m *RepoImpl) CreateActivity(ctx context.Context, tx *sql.Tx, category mode
 }
 
 func (r *RepoImpl) UpdateActivity(ctx context.Context, tx *sql.Tx, category model.Activity) model.Activity {
-	SQL := `UPDATE activities set title=? WHERE id=?`
-	_, err := tx.ExecContext(ctx, SQL, category.Title, category.Id)
+	SQL := `UPDATE activities set title=?,updated_at=? WHERE activity_id=?`
+	_, err := tx.ExecContext(ctx, SQL, category.Title, category.UpdatedAt, category.Id)
 	helper.PanicIfErr(err)
 	return category
 }
 
 func (r *RepoImpl) DeleteActivity(ctx context.Context, tx *sql.Tx, id int) {
-	SQL := `DELETE FROM activities WHERE id=?`
+	SQL := `DELETE FROM activities WHERE activity_id=?`
 	_, err := tx.ExecContext(ctx, SQL, id)
 	helper.PanicIfErr(err)
 }
@@ -122,9 +126,11 @@ func (r *RepoImpl) FindAllActivity(ctx context.Context, tx *sql.Tx) []model.Acti
 	for rows.Next() {
 		activity := model.Activity{}
 		current := fmt.Sprint(activity.CreatedAt)
-		err := rows.Scan(&activity.Id, &activity.Title, &activity.Email, &current)
+		current2 := fmt.Sprint(activity.UpdatedAt)
+		err := rows.Scan(&activity.Id, &activity.Title, &activity.Email, &current, &current2)
 		log.Printf("current :%v", current)
 		activity.CreatedAt, _ = time.Parse("2006-01-02 15:04:05", current)
+		activity.UpdatedAt, _ = time.Parse("2006-01-02 15:04:05", current2)
 		log.Printf("created :%v", activity.CreatedAt)
 		if err != nil {
 			log.Print(err)
@@ -136,16 +142,19 @@ func (r *RepoImpl) FindAllActivity(ctx context.Context, tx *sql.Tx) []model.Acti
 }
 
 func (r *RepoImpl) FindActivityById(ctx context.Context, tx *sql.Tx, id int) (model.Activity, error) {
-	SQL := "SELECT *FROM activities WHERE id =?"
+	SQL := "SELECT *FROM activities WHERE activity_id =?"
 
 	rows, err := tx.QueryContext(ctx, SQL, id)
 	helper.PanicIfErr(err)
 	defer rows.Close()
 	model := model.Activity{}
 	if rows.Next() {
+		current := fmt.Sprint(model.CreatedAt)
+		current2 := fmt.Sprint(model.UpdatedAt)
 		rows.Scan(&model.Id, &model.Title,
-			&model.Email, &model.CreatedAt)
-
+			&model.Email, &current, &current2)
+		model.CreatedAt, _ = time.Parse("2006-01-02 15:04:05", current)
+		model.UpdatedAt, _ = time.Parse("2006-01-02 15:04:05", current2)
 		return model, nil
 	} else {
 		result := fmt.Sprintf("Activity with ID %v Not Found", id)
