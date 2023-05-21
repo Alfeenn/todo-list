@@ -35,7 +35,7 @@ type Activity struct {
 
 type Todo struct {
 	Id         int       `json:"id"`
-	ActivityId int       `gorm:"size:40" json:"activity_group_id"`
+	ActivityId int       `gorm:"size:40" json:"activity_group_id" binding:"required"`
 	Title      string    `gorm:"not null; size:30" json:"title" binding:"required"`
 	Priority   string    `gorm:"not null; size:30; default:very-high" json:"priority"`
 	Isactive   bool      `gorm:"not null; size:30" json:"is_active"`

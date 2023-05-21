@@ -25,7 +25,10 @@ func NewService(c repository.Repository, DB *sql.DB) Service {
 
 func (s *ServiceImpl) CreateToDo(ctx context.Context, req model.Todo) model.Todo {
 	tx, err := s.DB.Begin()
-	helper.PanicIfErr(err)
+	if err != nil {
+		log.Print(err)
+		return req
+	}
 	defer helper.CommitorRollback(tx)
 
 	request := model.Todo{
@@ -45,40 +48,47 @@ func (s *ServiceImpl) CreateToDo(ctx context.Context, req model.Todo) model.Todo
 
 }
 
-func (s *ServiceImpl) UpdateToDo(ctx context.Context, req model.Todo) (model.Todo, error) {
+func (s *ServiceImpl) UpdateToDo(ctx context.Context, req model.Todo) model.Todo {
 	tx, err := s.DB.Begin()
-	helper.PanicIfErr(err)
+	if err != nil {
+		log.Print(err)
+		return req
+	}
 	defer helper.CommitorRollback(tx)
 
 	id := req.Id
 	model, err := s.Rep.FindTodo(ctx, tx, id)
 	if err != nil {
-		return model, err
-	} else {
-		model.UpdatedAt = req.UpdatedAt
-		model.Title = req.Title
-		model = s.Rep.UpdateToDo(ctx, tx, model)
-		return model, nil
+		panic(middleware.NewNotFound(err.Error()))
 	}
+	model.UpdatedAt = req.UpdatedAt
+	model.Title = req.Title
+	model = s.Rep.UpdateToDo(ctx, tx, model)
+	return model
+
 }
 
-func (s *ServiceImpl) DeleteToDo(ctx context.Context, id int) error {
+func (s *ServiceImpl) DeleteToDo(ctx context.Context, id int) {
 	tx, err := s.DB.Begin()
-	helper.PanicIfErr(err)
+	if err != nil {
+		log.Print(err)
+		return
+	}
 	defer helper.CommitorRollback(tx)
 	req, err := s.Rep.FindTodo(ctx, tx, id)
 	if err != nil {
-		return err
-	} else {
-		s.Rep.DeleteToDo(ctx, tx, req.Id)
-		return nil
+		panic(middleware.NewNotFound(err.Error()))
 	}
+	s.Rep.DeleteToDo(ctx, tx, req.Id)
 
 }
 
 func (s *ServiceImpl) FindTodo(ctx context.Context, id int) model.Todo {
 	tx, err := s.DB.Begin()
-	helper.PanicIfErr(err)
+	if err != nil {
+		log.Print(err)
+		return model.Todo{}
+	}
 	defer helper.CommitorRollback(tx)
 	model, err := s.Rep.FindTodo(ctx, tx, id)
 	if err != nil {
@@ -100,10 +110,17 @@ func (s *ServiceImpl) FindAllToDo(ctx context.Context) []model.Todo {
 
 func (s *ServiceImpl) CreateActivity(ctx context.Context, request model.Activity) model.Activity {
 	tx, err := s.DB.Begin()
+	log.Print("tx begin test")
 	if err != nil {
-		panic(err)
+		log.Print(err)
+		return request
 	}
-	defer helper.CommitorRollback(tx)
+	err = tx.Commit()
+	if err != nil {
+		log.Print(err)
+		return request
+	}
+	log.Print("tx success ", tx)
 	category := model.Activity{
 		Title:     request.Title,
 		Email:     request.Email,
@@ -111,11 +128,6 @@ func (s *ServiceImpl) CreateActivity(ctx context.Context, request model.Activity
 		UpdatedAt: request.UpdatedAt,
 	}
 	category = s.Rep.CreateActivity(ctx, tx, category)
-	if err != nil {
-
-		panic(err.Error())
-	}
-
 	return category
 
 }
@@ -124,6 +136,7 @@ func (s *ServiceImpl) UpdateActivity(ctx context.Context, request model.Activity
 	tx, err := s.DB.Begin()
 	if err != nil {
 		log.Fatal(err)
+		return request
 	}
 	defer helper.CommitorRollback(tx)
 

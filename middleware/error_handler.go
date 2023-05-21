@@ -1,6 +1,8 @@
 package middleware
 
 import (
+	"log"
+
 	"github.com/Alfeenn/todo-list/model/web"
 	"github.com/gin-gonic/gin"
 )
@@ -32,13 +34,16 @@ func NotFoundError(g *gin.Context, err interface{}) bool {
 		})
 		return true
 	} else {
+		g.Next()
 		return false
 	}
 }
 
 func InternalServer(g *gin.Context, err interface{}) {
+	log.Print("err middleware", err)
 	g.AbortWithStatusJSON(500, web.WebResponse{
 		Status: "Bad Request",
-		Data:   err,
+		Data:   &err,
 	})
+	g.Next()
 }

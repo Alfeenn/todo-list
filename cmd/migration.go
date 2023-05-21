@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"flag"
+	"log"
 
 	"github.com/Alfeenn/todo-list/databases"
 	"gorm.io/gorm"
@@ -25,14 +26,15 @@ func Command(tables []interface{}) (bool, error) {
 func MigrateCmd() bool {
 	// Schema table
 	tables := databases.Tables()
-	check, err := Command(tables)
-
+	err := Up(databases.MigrationDB(), tables)
 	// check error
 	if err != nil {
-		panic(err)
-	}
+		log.Print("migration error:", err)
+		return true
+	} else {
 
-	return check
+		return true
+	}
 }
 
 // Up migrates the schema

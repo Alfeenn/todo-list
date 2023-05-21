@@ -11,16 +11,13 @@ import (
 )
 
 func main() {
-	migrate := cmd.MigrateCmd()
-	if migrate {
-		return
-	}
-	engine := gin.New()
+	cmd.MigrateCmd()
+
+	engine := gin.Default()
 	db := app.NewDB()
 	repo := repository.NewRepository()
 	service := service.NewService(repo, db)
 	controller := controller.NewController(service)
-	engine.Use(gin.Logger())
 	engine.Use(gin.CustomRecovery(middleware.ErrorRecovery))
 	baseRoute := engine.Group("")
 	todo := baseRoute.Group("/todo-items")
@@ -28,6 +25,8 @@ func main() {
 		todo.GET("", controller.FindAll)
 		todo.GET("/:id", controller.FindTodoById)
 		todo.POST("", controller.Create)
+		todo.DELETE("/:id", controller.Delete)
+		todo.PATCH("/:id", controller.Update)
 	}
 	activity := baseRoute.Group("/activity-groups")
 	{

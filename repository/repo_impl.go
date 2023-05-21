@@ -19,7 +19,7 @@ func NewRepository() Repository {
 }
 
 func (r *RepoImpl) CreateToDo(ctx context.Context, tx *sql.Tx, category model.Todo) model.Todo {
-	SQL := "INSERT INTO todos(activity_id,title,isactive,created_at,updated_at) VALUES(?,?,?,?,?)"
+	SQL := "INSERT INTO todos(activity_group_id,title,isactive,created_at,updated_at) VALUES(?,?,?,?,?)"
 	rows, err := tx.ExecContext(ctx, SQL, category.ActivityId, category.Title,
 		category.Isactive, category.CreatedAt, category.UpdatedAt)
 	helper.PanicIfErr(err)
@@ -96,6 +96,7 @@ func (m *RepoImpl) CreateActivity(ctx context.Context, tx *sql.Tx, category mode
 	SQL := `INSERT INTO activities(title,email,created_at,updated_at) VALUES(?,?,?,?)`
 	rows, _ := tx.ExecContext(ctx, SQL, category.Title, category.Email, category.CreatedAt, category.UpdatedAt)
 	id, err := rows.LastInsertId()
+	log.Print("success insert id", id)
 	if err != nil {
 		log.Fatal(err)
 

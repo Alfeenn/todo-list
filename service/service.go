@@ -8,8 +8,8 @@ import (
 
 type Service interface {
 	CreateToDo(ctx context.Context, req model.Todo) model.Todo
-	UpdateToDo(ctx context.Context, req model.Todo) (model.Todo, error)
-	DeleteToDo(ctx context.Context, id int) error
+	UpdateToDo(ctx context.Context, req model.Todo) model.Todo
+	DeleteToDo(ctx context.Context, id int)
 	FindTodo(ctx context.Context, id int) model.Todo
 	FindAllToDo(ctx context.Context) []model.Todo
 	CreateActivity(ctx context.Context, request model.Activity) model.Activity
